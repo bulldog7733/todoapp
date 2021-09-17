@@ -172,7 +172,7 @@ function 로그인했니(요청, 응답, next){
 // { 제목: '어쩌구', 날짜: '어쩌구' }
 
 
-app.post('/list', function(요청, 응답){
+app.post('/add', function(요청, 응답){
     응답.send('전송완료');    
     db.collection('counter').findOne({name:'게시물갯수'}, function(에러, 결과){
         console.log(결과.totalPost);
