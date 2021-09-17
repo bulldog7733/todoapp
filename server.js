@@ -126,7 +126,7 @@ passport.serializeUser(function (user, done) {
 
 passport.deserializeUser(function (아이디, done) {
     db.collection('login').findOne({id : 아이디}, function(에러, 결과){
-        done(null, {결과})
+        done(null, 결과);       
     })    
 }); 
 
@@ -177,7 +177,7 @@ app.post('/list', function(요청, 응답){
     db.collection('counter').findOne({name:'게시물갯수'}, function(에러, 결과){
         console.log(결과.totalPost);
         var 총게시물갯수 = 결과.totalPost;               
-        var 저장할거 = {_id : 총게시물갯수 + 1, 아이디: 요청.user["결과"]._id, 작성자: 요청.user["결과"].id, 제목 : 요청.body.title, 날짜 : 요청.body.date}
+        var 저장할거 = {_id : 총게시물갯수 + 1, 아이디: 요청.user._id, 작성자: 요청.user.id, 제목 : 요청.body.title, 날짜 : 요청.body.date}
         db.collection('post').insertOne(저장할거, function(에러, 결과){
             console.log('저장완료');
             // counter라는 콜렉센에 있는 totoalPost 라는 항목도 1 증가시켜야 함(수정);
@@ -198,7 +198,7 @@ app.delete('/delete', function(요청, 응답){
     if(!요청.user){
         console.log('로그인이 안되었어요');
     } else{
-        var 삭제할데이터 = {_id : 요청.body._id, 아이디 : 요청.user['결과']._id }
+        var 삭제할데이터 = {_id : 요청.body._id, 아이디 : 요청.user._id }
         // 요청.body에 담겨온 게시물번호를 가진 글을 db에서 찾아서 삭제해주세요
         db.collection('post').deleteOne(삭제할데이터, function(에러, 결과){     
             if(결과.deletedCount == 0){
