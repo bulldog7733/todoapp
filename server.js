@@ -12,11 +12,13 @@ const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
+const flash = require('express-flash');
 
 
 app.use(session({secret : '비밀코드', resave : true, saveUninitialized: false}));
 app.use(passport.initialize());
 app.use(passport.session()); 
+app.use(flash());
 
 require('dotenv').config();
 
@@ -46,7 +48,7 @@ app.get('/beauty', function(요청, 응답) {
 });
 
 app.get('/', function(요청, 응답) { 
-    응답.render('index.ejs')
+    응답.render('index.ejs')   
 });
 
 app.get('/write', function(요청, 응답) { 
@@ -160,9 +162,16 @@ app.get('/login', function(요청, 응답){
     응답.render('login.ejs');
 });
 
-app.post('/login', passport.authenticate('local', {failureRedirect : '/fail'}), function(요청, 응답){
-    응답.redirect('/');
-});
+app.post('/login', passport.authenticate('local', {
+    successRedirect : '/',
+    failureRedirect : '/login',
+    failureFlash : true
+}) );
+
+app.delete('/logout', function(요청, 응답){
+    요청.logOut();
+    응답.redirect('/login');
+})
 
 app.get('/mypage', 로그인했니, function (요청, 응답) {    
     응답.render('mypage.ejs', { 사용자 : 요청.user });
@@ -173,9 +182,17 @@ function 로그인했니(요청, 응답, next){
     if(요청.user){
         next();
     } else{
-        응답.send('로그인 안하셨는데요?');
+        응답.redirect('/login');
     }
 };
+
+// function 로그인검사불필요(요청, 응답, next){
+//     if(요청.user){
+//        응답.redirect('/');
+//     } else{
+//         next();
+//     }
+// }
 
 
 // 어떤 사람이 /add 라는 경로로 post 요청을 하면,
