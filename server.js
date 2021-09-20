@@ -8,9 +8,11 @@ app.use(methodOverride('_method'));
 app.set('view engine', 'ejs');
 app.use('/public', express.static('./public/'));
 
+const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
+
 
 app.use(session({secret : '비밀코드', resave : true, saveUninitialized: false}));
 app.use(passport.initialize());
@@ -108,11 +110,11 @@ passport.use(new LocalStrategy({
     passReqToCallback: false,
   }, function (입력한아이디, 입력한비번, done) {
     //console.log(입력한아이디, 입력한비번);
-    db.collection('login').findOne({ id: 입력한아이디 }, function (에러, 결과) {
+    db.collection('login').findOne({ id: 입력한아이디 }, async function (에러, 결과) {
       if (에러) return done(에러)
   
       if (!결과) return done(null, false, { message: '존재하지않는 아이디요' })
-      if (입력한비번 == 결과.pw) {
+      if (await bcrypt.compare(입력한비번, 결과.pw)) {
         return done(null, 결과)
       } else {
         return done(null, false, { message: '비번틀렸어요' })
@@ -131,16 +133,26 @@ passport.deserializeUser(function (아이디, done) {
 }); 
 
 app.post('/register', function (요청, 응답) {
-    db.collection('login').findOne({id : 요청.body.id}, function(에러, 결과){
-        console.log(결과);
-        if(결과 != null){
-            응답.send('이용할 수 없는 아이디입니다');
-        } else{
-            db.collection('login').insertOne({ id: 요청.body.id, pw: 요청.body.pw, name: 요청.body.username }, function (에러, 결과) {
-                응답.redirect('/')
-              })
-        }
-    })                   
+    var 아이디 = 요청.body.id;
+    console.log(아이디);
+    var id_type = /^[A-Za-z0-9+]*$/;
+    console.log(id_type.test(아이디));
+    if (!id_type.test(아이디)) {
+        응답.send('아이디가 조건에 맞지 않습니다');
+     } else{
+        db.collection('login').findOne({id : 아이디}, async function(에러, 결과){
+            console.log(결과);
+            if(결과 != null){
+                응답.send('이용할 수 없는 아이디입니다');
+            } else{
+                const hashedPassword = await bcrypt.hash(요청.body.pw, 8);
+                console.log(hashedPassword);
+                db.collection('login').insertOne({ id: 아이디, pw: hashedPassword, name: 요청.body.username }, function (에러, 결과) {
+                    console.log(결과);
+                    응답.redirect('/')
+                })
+            }
+    })}                   
 });
 
 
