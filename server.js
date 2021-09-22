@@ -38,6 +38,8 @@ MongoClient.connect(process.env.DB_URL, function(에러, client){
     });
 });
 
+app.use('/shop', require('./routes/shop.js') );
+app.use('/board/sub', require('./routes/board.js') );
 
 app.get('/pet', function(요청, 응답) { 
     응답.send('펫용품 쇼핑할 수 있는 페이지입니다.');
@@ -51,7 +53,7 @@ app.get('/', function(요청, 응답) {
     응답.render('index.ejs')   
 });
 
-app.get('/write', function(요청, 응답) { 
+app.get('/write', 로그인했니, function(요청, 응답) { 
     응답.render('write.ejs')
 });
 
@@ -263,6 +265,9 @@ app.get('/search', (요청, 응답)=>{
         응답.render('search.ejs', {posts : 결과});
     });
 });
+
+
+
 
 
 
