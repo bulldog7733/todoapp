@@ -17,7 +17,7 @@
     <h4 class="container mt-4"><strong>글 작성페이지</strong></h4>
 
     <div class="container mt-3">
-        <form action="/add" method="POST">
+        <form action="/write" method="POST" enctype="multipart/form-data" >
         <div class="form-group">
             <label>오늘의 할일</label>
             <input type="text" class="form-control" name="title">
@@ -26,6 +26,7 @@
             <label>날짜</label>
             <input type="text" class="form-control" name="date">
         </div>
+        <input type="file" name="프로필">
         <button type="submit" class="btn btn-danger">Submit</button>
         </form>
     </div>

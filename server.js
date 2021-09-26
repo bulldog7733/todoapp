@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const multer = require('multer');
+const path = require('path');
 
 app.use(express.urlencoded({extended: true})); 
 const MongoClient = require('mongodb').MongoClient;
@@ -203,17 +205,129 @@ function 로그인했니(요청, 응답, next){
 // { 제목: '어쩌구', 날짜: '어쩌구' }
 
 
-app.post('/add', function(요청, 응답){
-    응답.send('전송완료');    
+
+
+
+
+app.get('/search', (요청, 응답)=>{
+    var 검색조건 = [
+        {
+          $search: {
+            index: 'titelSearch',
+            text: {
+              query: 요청.query.value,
+              path: '제목'  // 제목날짜 둘다 찾고 싶으면 ['제목', '날짜']
+            }
+          }
+        },
+        { $project : { 제목 : 1, _id : 0, score: {$meta: 'searchScore'} } },
+    ] 
+    console.log(요청.query.value);
+    db.collection('post').aggregate(검색조건).toArray((에러, 결과)=>{
+        console.log(결과);
+        응답.render('search.ejs', {posts : 결과});
+    });
+});
+
+
+
+var storage = multer.diskStorage({
+
+  destination : function(req, file, cb){
+    cb(null, './public/image/')
+  },
+  filename: function(req, file, cb){
+    cb(null,file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+// const upload = multer({
+//   storage: storage,
+//   // limits:{fileSize: 1000000},
+//   fileFilter: function(req, file, cb){
+//     checkFileType(file, cb);
+//   }
+// }).single('myImage');
+
+
+const upload = multer({
+    storage: storage,
+    // limits:{fileSize: 1000000},
+    fileFilter: function(req, file, cb){
+      checkFileType(file, cb);
+    }
+})
+  
+  // Check File Type
+function checkFileType(file, cb){
+// Allowed ext
+    const filetypes = /jpeg|jpg|png|gif/;
+    // Check ext
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    // Check mime
+    const mimetype = filetypes.test(file.mimetype);
+
+    if(mimetype && extname){
+        return cb(null,true);
+    } else {
+        cb('Error: Images Only!');
+    }
+}
+
+// app.get('/upload', function(요청, 응답){
+    
+//     응답.render('upload.ejs');
+// });
+
+// app.post('/upload', upload, function(요청, 응답){
+//     console.log(요청.file.path);
+//     응답.send('업로드완료');
+    
+// });
+
+// app.post('/upload', (req, res) => {  
+//     upload(req, res, (err) => {   
+//       console.log(req);   
+//       if(err){
+//         res.render('upload.ejs', {
+//           msg: err
+//         });
+//       } else {
+//         if(req.file == undefined){
+//           res.render('upload.ejs', {
+//             msg: 'Error: No File Selected!'
+//           });
+//         } else {
+//           res.render('upload.ejs', {
+//             msg: 'File Uploaded!',            
+//             file: `public/image/${req.file.filename}`,            
+//           });
+//         }
+//       }
+//     });
+//   });
+  
+
+// app.get('/image/:imageName', function(요청, 응답){
+//     console.log(요청);
+//     응답.sendFile( __dirname + '/public/image/' + 요청.params.imageName )
+// });
+
+// 20181013_141504.jpg
+
+app.post('/write', upload.single('프로필'), function(요청, 응답){
+    // 응답.send('전송완료');    
     db.collection('counter').findOne({name:'게시물갯수'}, function(에러, 결과){
         console.log(결과.totalPost);
-        var 총게시물갯수 = 결과.totalPost;               
-        var 저장할거 = {_id : 총게시물갯수 + 1, 아이디: 요청.user._id, 작성자: 요청.user.id, 제목 : 요청.body.title, 날짜 : 요청.body.date}
+        var 총게시물갯수 = 결과.totalPost;
+        console.log(요청);               
+        var 저장할거 = {_id : 총게시물갯수 + 1, 아이디: 요청.user._id, 작성자: 요청.user.id, 제목 : 요청.body.title, 날짜 : 요청.body.date, 이미지 : 요청.file.filename}
         db.collection('post').insertOne(저장할거, function(에러, 결과){
             console.log('저장완료');
             // counter라는 콜렉센에 있는 totoalPost 라는 항목도 1 증가시켜야 함(수정);
             db.collection('counter').updateOne({name:'게시물갯수'}, { $inc: {totalPost:1} }, function(에러, 결과){
                 if(에러){return console.log(에러)};
+                응답.redirect('/list');
             });
         });              
     });      
@@ -243,32 +357,6 @@ app.delete('/delete', function(요청, 응답){
     }
     
 })
-
-
-
-app.get('/search', (요청, 응답)=>{
-    var 검색조건 = [
-        {
-          $search: {
-            index: 'titelSearch',
-            text: {
-              query: 요청.query.value,
-              path: '제목'  // 제목날짜 둘다 찾고 싶으면 ['제목', '날짜']
-            }
-          }
-        },
-        { $project : { 제목 : 1, _id : 0, score: {$meta: 'searchScore'} } },
-    ] 
-    console.log(요청.query.value);
-    db.collection('post').aggregate(검색조건).toArray((에러, 결과)=>{
-        console.log(결과);
-        응답.render('search.ejs', {posts : 결과});
-    });
-});
-
-
-
-
 
 
 app.use(function(req, res, next) {
